@@ -141,6 +141,70 @@ def extrair_remotive():
     return vagas_formatadas
 
 
+# --- TRABALHADOR 4: Landing.jobs (Não precisa de chave) ---
+def extrair_landing_jobs():
+    vagas_formatadas = []
+    url = "https://landing.jobs/api/v1/jobs"
+    
+    try:
+        response = requests.get(url, timeout=15)
+        if response.status_code == 200:
+            vagas = response.json()
+            for item in vagas:
+                # Extrair empresa do URL
+                empresa_nome = "Confidencial"
+                item_url = item.get("url", "")
+                if "/at/" in item_url:
+                    try:
+                        slug = item_url.split("/at/")[1].split("/")[0]
+                        empresa_nome = slug.replace("-", " ").title()
+                    except:
+                        pass
+                
+                # Tratar localização
+                local = "Remoto" if item.get("remote") else "Portugal"
+                if item.get("locations") and len(item["locations"]) > 0:
+                    city = item["locations"][0].get("city", "")
+                    country = item["locations"][0].get("country_code", "")
+                    loc_str = f"{city}, {country}".strip(", ")
+                    if loc_str:
+                        if item.get("remote"):
+                            local = f"{loc_str} / Remoto"
+                        else:
+                            local = loc_str
+                
+                # Tratar salário
+                salario = ""
+                sal_low = item.get("gross_salary_low")
+                sal_high = item.get("gross_salary_high")
+                if sal_low and sal_high:
+                    salario = f"{sal_low} - {sal_high} {item.get('currency_code', 'EUR')}"
+                
+                # Descrição
+                desc_raw = item.get("role_description", "") or ""
+                reqs_raw = item.get("main_requirements", "") or ""
+                descricao_raw = f"{desc_raw}<br><br><b>Requisitos:</b><br>{reqs_raw}"
+                descricao_limpa = limpar_html(descricao_raw)
+                
+                vaga = {
+                    "id_vaga": f"landingjobs_{item.get('id', '')}",
+                    "titulo": item.get("title", "Sem título"),
+                    "empresa": empresa_nome,
+                    "local": local,
+                    "fonte": "Landing.jobs",
+                    "data_publicacao": item.get("published_at", "Recente"),
+                    "descricao": descricao_limpa,
+                    "salario": salario,
+                    "tipo": item.get("type", "Emprego"),
+                    "url": item_url
+                }
+                vagas_formatadas.append(vaga)
+    except Exception as e:
+        logging.error(f"Erro ao extrair do Landing.jobs: {e}")
+        
+    return vagas_formatadas
+
+
 # --- Módulo de Envio de Notificações por Email ---
 def enviar_notificacoes(db, total_novas_vagas):
     logging.info("A iniciar o processo de notificações por e-mail...")
@@ -240,8 +304,11 @@ def ScraperOportunia(myTimer: func.TimerRequest) -> None:
     logging.info("A recolher do Remotive (Remote IT)...")
     lista_remotive = extrair_remotive()
     
+    logging.info("A recolher do Landing.jobs...")
+    lista_landing = extrair_landing_jobs()
+    
     # 3. Juntar tudo numa lista final
-    todas_as_vagas = lista_itjobs + lista_jooble + lista_remotive
+    todas_as_vagas = lista_itjobs + lista_jooble + lista_remotive + lista_landing
     
     if len(todas_as_vagas) == 0:
         logging.warning("Nenhuma vaga encontrada nas APIs. A abortar gravação.")
