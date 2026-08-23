@@ -16,7 +16,7 @@ Plataforma cloud-native que agrega e personaliza oportunidades profissionais e a
 
 ## Sobre o projeto
 
-Mais do que um agregador, o Oportunia funciona como uma camada de curadoria que cruza o percurso académico do estudante com as necessidades reais do mercado. A recolha de dados é automatizada (IEFP, ITJobs.pt, Erasmus+) via Azure Functions, com os resultados persistidos em Azure CosmosDB e servidos através de uma interface web em Azure App Service. A análise semântica de perfis e a geração de recomendações personalizadas são feitas via Azure OpenAI Service.
+Mais do que um agregador, o Oportunia funciona como uma camada de curadoria que cruza o percurso académico do estudante com as necessidades reais do mercado. A recolha de dados é automatizada (ITJobs, Jooble, Remotive e Landing.jobs) via Azure Functions, com os resultados persistidos em Azure CosmosDB e servidos através de uma interface web em Azure App Service. A análise semântica de perfis e a geração de recomendações personalizadas são feitas via Azure OpenAI Service.
 
 Projeto desenvolvido no âmbito da unidade curricular de Computação em Nuvem (Licenciatura em Engenharia Informática, ESTCB/IPCB), em equipa.
 
@@ -24,7 +24,7 @@ Projeto desenvolvido no âmbito da unidade curricular de Computação em Nuvem (
 
 ```mermaid
 flowchart LR
-    A[Fontes externas: IEFP, ITJobs.pt, Erasmus+] -->|Timer Trigger| B(Azure Functions)
+    A[Fontes externas: ITJobs, Jooble, Remotive, Landing.jobs] -->|Timer Trigger| B(Azure Functions)
     B --> C[(Azure CosmosDB<br/>API MongoDB)]
     C --> D[Azure App Service<br/>Flask]
     D --> E[Azure OpenAI Service<br/>GPT-4o]
@@ -57,7 +57,7 @@ A recolha corre de forma independente da aplicação principal, por Functions co
 
 ## Decisões de engenharia
 
-Optámos por CosmosDB com API MongoDB em vez de uma base relacional porque os dados agregados de fontes diferentes (IEFP, ITJobs.pt, Erasmus+) não têm um esquema uniforme entre si, e um modelo de documentos evita andar a forçar esses dados a um formato comum antes de os guardar.
+Optámos por CosmosDB com API MongoDB em vez de uma base relacional porque os dados agregados de fontes diferentes (ITJobs, Jooble, Remotive, Landing.jobs) não têm um esquema uniforme entre si, e um modelo de documentos evita andar a forçar esses dados a um formato comum antes de os guardar.
 
 A recolha de dados ficou separada da aplicação principal em Azure Functions, correndo por Timer Trigger, para não bloquear a app enquanto está a fazer scraping ou chamadas a APIs externas, e para poder ajustar a frequência de recolha sem tocar no resto do código.
 
@@ -91,7 +91,7 @@ Toda a infraestrutura Azure (App Service, CosmosDB, Storage) é provisionada via
 O projeto foi pensado e construído no tempo de um semestre, por isso há coisas conscientemente deixadas de fora:
 
 - Não há testes automatizados; a validação foi feita manualmente ao longo do desenvolvimento
-- A recolha de dados está limitada às três fontes mencionadas; mais fontes exigiriam adaptar cada scraper individualmente
+- A recolha de dados está limitada às quatro fontes mencionadas; mais fontes exigiriam adaptar cada scraper individualmente
 - O matching semântico depende inteiramente do Azure OpenAI Service, sem fallback caso o serviço esteja indisponível
 
 ## Equipa
